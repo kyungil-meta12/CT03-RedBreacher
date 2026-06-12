@@ -613,7 +613,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 60f072573dbd47d8a387f81535be07d9, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BossDungeon
+  m_EditorClassIdentifier: Assembly-CSharp::BossTracker
 --- !u!1 &288729451
 GameObject:
   m_ObjectHideFlags: 0
@@ -2232,6 +2232,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3576705882484979790, guid: 345f49ab4b61b4f4c810c3f084b1c094, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3666472196055000809, guid: 345f49ab4b61b4f4c810c3f084b1c094, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3810468756786278751, guid: 345f49ab4b61b4f4c810c3f084b1c094, type: 3}
@@ -5564,7 +5568,8 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 256101966}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 5677393872872524859, guid: 9e6edc37bb5954e40a6c580a628c5ee2, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7756198123674333966, guid: 9e6edc37bb5954e40a6c580a628c5ee2, type: 3}
       insertIndex: -1
