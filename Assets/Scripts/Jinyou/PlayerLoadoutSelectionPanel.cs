@@ -32,7 +32,8 @@ public class PlayerLoadoutSelectionPanel : MonoBehaviour
     [SerializeField] private PlayerLoadoutOptionButton optionButtonPrefab;
 
     [Header("Detail")] 
-    [SerializeField] private Image detailIcon;
+    [SerializeField] private Image detailIconWeapon;
+    [SerializeField] private RawImage detailIconDrone;
     [SerializeField] private TMP_Text detailNameText;
     [SerializeField] private TMP_Text detailCategoryText;
     [SerializeField] private TMP_Text detailStatsText;
@@ -57,6 +58,29 @@ public class PlayerLoadoutSelectionPanel : MonoBehaviour
         target.sprite = sprite;
         target.enabled = sprite != null;
         target.preserveAspect = true;
+        target.gameObject.SetActive(sprite != null);
+    }
+
+    private static void SetDroneIcon(RawImage target, DroneConfig drone)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        GameObject prefab = drone != null ? drone.DronePrefab : null;
+        if (prefab == null)
+        {
+            target.texture = null;
+            target.color = Color.clear;
+            target.gameObject.SetActive(false);
+            return;
+        }
+
+        RenderTexture preview = UnitPreviewRenderer.Instance.GetPreview(prefab);
+        target.texture = preview;
+        target.color = preview != null ? Color.white : Color.clear;
+        target.gameObject.SetActive(preview != null);
     }
 
 #if UNITY_EDITOR
@@ -81,6 +105,7 @@ public class PlayerLoadoutSelectionPanel : MonoBehaviour
         // "처음엔 안 열리고 두 번째 클릭에야 열리는" 문제가 생긴다.
         // 패널은 씬/프리팹에서 비활성으로 시작하므로 여기서 따로 끌 필요가 없다.
         ResolveSources();
+        ResolveDetailIconReferences();
     }
 
     private void Start()
@@ -373,25 +398,35 @@ public class PlayerLoadoutSelectionPanel : MonoBehaviour
 
     private void RefreshWeaponDetail(ProjectileConfig weapon)
     {
-        SetIcon(detailIcon, weapon != null ? weapon.Icon : null);
+        ResolveDetailIconReferences();
+
+        int weaponEnhanceLevel = weapon != null ? GetFactoryWeaponLevel(weapon) : 0;
+        float weaponEnhancedDamage = weaponEnhanceLevel > 0 ? GetEnhancedWeaponDamage(weapon) : 0f;
+        SetIcon(detailIconWeapon, weapon != null ? weapon.Icon : null);
+        SetDroneIcon(detailIconDrone, null);
         SetText(detailNameText, weapon != null ? weapon.DisplayName : "무기를 선택하세요.");
         SetText(detailCategoryText, weapon != null ? $"Type: {weapon.WeaponCategory}" : string.Empty);
         SetText(detailStatsText, weapon != null
-            ? $"공장강화 Lv. {GetFactoryWeaponLevel(weapon)}\n"
+            ? $"공장강화 Lv. {weaponEnhanceLevel}\n"
                 + $"수집강화 Lv. {GetCollectionWeaponLevel(weapon)}\n"
-                + $"피해량: {weapon.AttackDamage:0.##} (+ {GetEnhancedWeaponDamage(weapon):0.##})\n"
+                + $"피해량: {weapon.AttackDamage:0.##} (+ {weaponEnhancedDamage:0.##})\n"
                 + $"발사간격: {weapon.Speed:0.##}"
             : string.Empty);
     }
 
     private void RefreshDroneDetail(DroneConfig drone)
     {
-        SetIcon(detailIcon, null);
+        ResolveDetailIconReferences();
+
+        int droneEnhanceLevel = drone != null ? GetFactoryDroneLevel(drone) : 0;
+        float droneEnhancedDamage = droneEnhanceLevel > 0 ? GetEnhancedDroneDamage(drone) : 0f;
+        SetIcon(detailIconWeapon, null);
+        SetDroneIcon(detailIconDrone, drone);
         SetText(detailNameText, drone != null ? drone.DisplayName : "드론을 선택하세요.");
         SetText(detailCategoryText, drone != null ? $"갯수: {drone.DroneCount}" : string.Empty);
         SetText(detailStatsText, drone != null
-            ? $"공장강화 Lv. {GetFactoryDroneLevel(drone)}\n"
-                + $"피해량: {drone.AttackDamage:0.##} (+ {GetEnhancedDroneDamage(drone):0.##})\n"
+            ? $"공장강화 Lv. {droneEnhanceLevel}\n"
+                + $"피해량: {drone.AttackDamage:0.##} (+ {droneEnhancedDamage:0.##})\n"
                 + $"사거리: {drone.AttackRange:0.##}\n"
                 + $"발사간격: {drone.AttackInterval:0.##}"
             : string.Empty);
@@ -422,6 +457,54 @@ public class PlayerLoadoutSelectionPanel : MonoBehaviour
         assemblyFactory ??= BaseCampManager.Instance != null
             ? BaseCampManager.Instance.AssemblyFactory
             : FindFirstObjectByType<AssemblyFactory>(FindObjectsInactive.Include);
+    }
+
+    private void ResolveDetailIconReferences()
+    {
+        if (detailIconWeapon != null)
+        {
+            return;
+        }
+
+        Transform detailRoot = FindChildTransformByName(transform, "Detail_WeaponIcon");
+        // 상세 프레임의 배경이 아니라 내부 아이콘 슬롯에 무기 스프라이트를 반영한다.
+        detailIconWeapon = FindChildComponentByName<Image>(detailRoot, "Icon");
+    }
+
+    private static Transform FindChildTransformByName(Transform root, string childName)
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (child.name == childName)
+            {
+                return child;
+            }
+        }
+
+        return null;
+    }
+
+    private static T FindChildComponentByName<T>(Transform root, string childName) where T : Component
+    {
+        if (root == null)
+        {
+            return null;
+        }
+
+        foreach (T component in root.GetComponentsInChildren<T>(true))
+        {
+            if (component.name == childName)
+            {
+                return component;
+            }
+        }
+
+        return null;
     }
 
     private int GetCollectionWeaponLevel(ProjectileConfig weapon)
